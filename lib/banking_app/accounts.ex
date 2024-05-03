@@ -146,4 +146,14 @@ defmodule BankingApp.Accounts do
   def change_account(%Account{} = account, attrs \\ %{}) do
     Account.changeset(account, attrs)
   end
+
+  def tranfer_funds(account) do
+    with {:ok, routing} <- Operation.get_routing_details(account),
+         {:ok, _} <- Operation.authorize_transfer(account, routing["routing_number"]) do
+      {:ok, "success"}
+    else
+      {:error, %{"error" => message}} -> {:error, message}
+      _ -> {:error, "Something went wrong."}
+    end
+  end
 end

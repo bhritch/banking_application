@@ -44,17 +44,16 @@ defmodule BankingApp.Operation do
     |> process_response()
   end
 
-  def list_transaction(_) do
-    nil
-  end
-
   def authorize_transfer(account, routing_number) do
+    secret = "#{generate_character()}" |> String.downcase()
+    random_account = generate_account_number()
+
     payload =
       %{
         "type" => "Authorize",
-        "account" => account.account,
+        "account" => random_account,
         "routing" => routing_number,
-        "secret" => ""
+        "secret" => secret
       }
       |> Jason.encode_to_iodata!()
 
@@ -103,5 +102,19 @@ defmodule BankingApp.Operation do
 
   def process_response(response) do
     response
+  end
+
+  @number_chars ~c"1234567890"
+  def generate_number(length \\ 10) do
+    for _ <- 1..length, into: ~c"", do: Enum.random(@number_chars)
+  end
+
+  @letter_chars ~c"ABCDEFGHJKLMNPQRSTUVWXYZ"
+  def generate_character(length \\ 5) do
+    for _ <- 1..length, into: ~c"", do: Enum.random(@letter_chars)
+  end
+
+  def generate_account_number() do
+    "171471#{generate_number()}-#{generate_number(4)}"
   end
 end

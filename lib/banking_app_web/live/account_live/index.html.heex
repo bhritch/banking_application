@@ -61,7 +61,7 @@
 >
   <.live_component
     module={BankingAppWeb.AccountLive.TransferComponent}
-    id={@account.id}
+    id={@account.id || :new}
     title={@page_title}
     action={@live_action}
     account={@account}
