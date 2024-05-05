@@ -8,14 +8,25 @@ defmodule BankingAppWeb.AccountLive.Show do
     {:ok, socket}
   end
 
-  @impl true
-  def handle_params(%{"id" => id}, _, socket) do
-    {:noreply,
-     socket
-     |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:account, Accounts.get_account!(id))}
+   @impl true
+  def handle_params(params, _url, socket) do
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
 
-  defp page_title(:show), do: "Show Account"
-  defp page_title(:edit), do: "Edit Account"
+  defp apply_action(socket, :show, %{"id" => id}) do
+    socket
+    |> assign(:page_title, "Show Account")
+    |> assign(:account, Accounts.get_account!(id))
+    |> assign(:transactions, Accounts.get_transactions(id))
+  end
+
+  defp apply_action(socket, :authorize, %{"id" => id, "trxn_id" => trxn_id}) do
+    socket
+    |> assign(:page_title, "Authorize account")
+    |> assign(:account, Accounts.get_account!(id))
+    |> assign(:transactions, Accounts.get_transactions(id))
+    |> assign(:transaction, Accounts.get_transactions_by_id(trxn_id))
+
+  end
+
 end

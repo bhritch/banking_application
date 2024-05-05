@@ -1,20 +1,45 @@
+<div class="py-5">
+  <.header>
+    Account <%= @account.id %>
+    <:subtitle>This is a account record from your database.</:subtitle>
+    <:actions>
+      <%!-- <.link patch={~p"/accounts/#{@account}/show/edit"} phx-click={JS.push_focus()}>
+        <.button>Edit account</.button>
+      </.link> --%>
+    </:actions>
+  </.header>
+
+  <.list>
+    <:item title="Account"><%= @account.account %></:item>
+    <:item title="State"><%= @account.state %></:item>
+    <:item title="City"><%= @account.city %></:item>
+    <:item title="Country"><%= @account.country %></:item>
+    <:item title="Company"><%= @account.company %></:item>
+  </.list>
+</div>
+<div class="py-5 mt-5">
 <.header>
-  Account <%= @account.id %>
+  Transactions
   <:subtitle>This is a account record from your database.</:subtitle>
-  <:actions>
-    <%!-- <.link patch={~p"/accounts/#{@account}/show/edit"} phx-click={JS.push_focus()}>
-      <.button>Edit account</.button>
-    </.link> --%>
-  </:actions>
+
 </.header>
 
-<.list>
-  <:item title="Account"><%= @account.account %></:item>
-  <:item title="State"><%= @account.state %></:item>
-  <:item title="City"><%= @account.city %></:item>
-  <:item title="Country"><%= @account.country %></:item>
-  <:item title="Company"><%= @account.company %></:item>
-</.list>
+<.table
+  id="transactions"
+  rows={@transactions}
+>
+  <:col :let={transaction} label="Account"><%= transaction.account %></:col>
+  <:col :let={transaction} label="Time"><%= transaction.time %></:col>
+  <:col :let={transaction} label="Amount"><%= transaction.amount %></:col>
+  <:col :let={transaction} label="Company"><%= transaction.company %></:col>
+  <:action :let={transaction}>
+    <.link patch={~p"/accounts/#{@account}/authorize/#{transaction}"}>
+      Authorize
+    </.link>
+  </:action>
+</.table>
+
+</div>
 
 <.back navigate={~p"/accounts"}>Back to accounts</.back>
 
@@ -30,6 +55,22 @@
     title={@page_title}
     action={@live_action}
     account={@account}
+    patch={~p"/accounts/#{@account}"}
+  />
+</.modal>
+
+<.modal
+  :if={@live_action == :authorize}
+  id="authorize-modal"
+  show
+  on_cancel={JS.patch(~p"/accounts/#{@account}")}
+>
+  <.live_component
+    module={BankingAppWeb.AccountLive.AuthorizeComponent}
+    id={@transaction.id}
+    title={@page_title}
+    action={@live_action}
+    transaction={@transaction}
     patch={~p"/accounts/#{@account}"}
   />
 </.modal>

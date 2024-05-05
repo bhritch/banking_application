@@ -24,8 +24,10 @@ defmodule BankingAppWeb.Router do
     live "/accounts/:id/edit", AccountLive.Index, :edit
     live "/accounts/:id/transfer", AccountLive.Index, :transfer
 
+
     live "/accounts/:id", AccountLive.Show, :show
     live "/accounts/:id/show/edit", AccountLive.Show, :edit
+    live "/accounts/:id/authorize/:trxn_id", AccountLive.Show, :authorize
   end
 
   # Other scopes may use custom stacks.

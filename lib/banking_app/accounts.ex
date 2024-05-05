@@ -6,14 +6,19 @@ defmodule BankingApp.Accounts do
   require Logger
 
   import Ecto.Query, warn: false
+  alias Ecto.Multi
 
   alias BankingApp.{
     Repo,
     Operation
   }
 
-  alias BankingApp.Accounts.Account
+  alias BankingApp.Accounts.{
+    Account,
+    Transaction
+  }
 
+  alias BankingApp.Transactions.Transaction, as: Trxn
   @doc """
   Returns the list of accounts.
 
@@ -85,15 +90,30 @@ defmodule BankingApp.Accounts do
   end
 
   def fetch_account(%Account{} = account) do
-    # %{"account" => attrs} = Operation.get_account_details(account)
 
-    case Operation.get_account_details(account) do
+    case Operation.get_account_details(account, account.account) do
       {:ok, account_details} ->
         %{
           "account" => attrs
         } = account_details
 
+        delete_trxn(account)
+        delete_authorize_trxn(account)
         update_account(account, attrs)
+
+      {:error, message} ->
+        {:error, message}
+    end
+  end
+
+  def fetch_trxn_account(account, account_number) do
+    case Operation.get_account_details(account, account_number) do
+      {:ok, account_details} ->
+        %{
+          "account" => attrs
+        } = account_details
+
+        {:ok, attrs}
 
       {:error, message} ->
         {:error, message}
@@ -118,6 +138,13 @@ defmodule BankingApp.Accounts do
     |> Repo.update()
   end
 
+
+  def update_trxn(%Transaction{} = transaction, attrs) do
+    transaction
+    |> Transaction.changeset(attrs)
+    |> Repo.update()
+  end
+
   @doc """
   Deletes a account.
 
@@ -134,6 +161,16 @@ defmodule BankingApp.Accounts do
     Repo.delete(account)
   end
 
+  def delete_trxn(account) do
+    from(t in Transaction, where: t.account_id == ^account.id) |> Repo.delete_all()
+  end
+
+  def delete_authorize_trxn(account) do
+    from(t in Trxn, where: t.account_id == ^account.id) |> Repo.delete_all()
+  end
+
+
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking account changes.
 
@@ -147,13 +184,138 @@ defmodule BankingApp.Accounts do
     Account.changeset(account, attrs)
   end
 
-  def tranfer_funds(account) do
-    with {:ok, routing} <- Operation.get_routing_details(account),
-         {:ok, _} <- Operation.authorize_transfer(account, routing["routing_number"]) do
-      {:ok, "success"}
+  def change_transaction(%Transaction{} = transaction, attrs \\ %{}) do
+    Transaction.changeset(transaction, attrs)
+  end
+
+  def get_routing(account) do
+    case Operation.get_routing_details(account, account.state) do
+      {:ok, routing} ->
+        update_account(account, routing)
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def update_trxn_routing(account, transaction, trxn_account) do
+    %{
+      "state" => state
+    } = trxn_account
+
+    case Operation.get_routing_details(account, state) do
+      {:ok, routing} ->
+        update_trxn(transaction, routing)
+      {:error, error} -> {:error, error}
+    end
+  end
+
+   def tranfer_funds(account) do
+    with {:ok, params} <- get_authorize_transactions(account.id),
+         {:ok, _} <- Operation.transfer_funds(account, params) do
+      {:ok, account}
     else
       {:error, %{"error" => message}} -> {:error, message}
       _ -> {:error, "Something went wrong."}
     end
   end
+
+  def get_transactions_by_id(id) do
+    query =
+      from t in Transaction,
+      left_join: a in assoc(t, :accounts),
+      where: t.id == ^id,
+      preload: [accounts: a]
+    Repo.one(query)
+  end
+
+  def get_transactions(id) do
+    account_id = String.to_integer(id)
+
+    query =
+      from t in Transaction,
+      where: t.account_id == ^account_id
+
+    case Repo.all(query) do
+      [] ->
+        account = get_account!(account_id)
+        case Operation.get_list_transaction(account) do
+          {:ok, %{"transactions" => transactions}} ->
+            multi = Multi.new()
+            multi =
+              transactions
+                |> Enum.with_index()
+                |> Enum.reduce(multi, fn {trxn, idx}, multi ->
+                  trxn_params =
+                    %Transaction{account_id: account_id}
+                      |> Transaction.changeset(trxn)
+                  Multi.insert(multi, {:insert_trxn, idx}, trxn_params)
+                end)
+            multi |> Repo.transaction
+
+            get_transactions(id)
+
+          {:error, %{"error" => message}} -> {:error, message}
+        end
+      txn ->
+        txn
+    end
+
+  end
+
+  def authorize(account, trxn_account,  %{"transaction" => %{"secret" => secret}}) do
+    case Operation.authorize_transfer(account, trxn_account, secret) do
+      {:ok, authorize} ->
+        %{
+          "checks" => checks,
+          "error" => error
+        } = authorize
+
+        if is_nil(error) do
+          %{
+            "token" => token,
+            "amount" => amount
+          } = authorize
+
+          payload = %{
+            "token" => token,
+            "amount" => amount
+          }
+
+          %Trxn{account_id: account.id}
+            |> Trxn.changeset(payload)
+            |> IO.inspect()
+            |> Repo.insert()
+        else
+          error_message = Enum.map(checks, fn check ->
+            "#{check["letter"]} is #{check["match"]}"
+          end)
+          |> Enum.join(", ")
+          {:error, error_message}
+        end
+
+      {:error, %{"error" => error}} ->
+        {:error, error}
+    end
+  end
+
+  def get_authorize_transactions(account_id) do
+    query =
+      from t in Trxn,
+      where: t.account_id == ^account_id
+
+    case Repo.all(query) do
+      [] ->
+        {:error, "No authorize transactions found."}
+      transactions ->
+        tokens = Enum.map(transactions, fn trxn ->
+          trxn.token
+        end)
+        Logger.warning "#{inspect(tokens, pretty: true)}"
+        total = Enum.reduce(transactions, 0, fn trxn, acc ->
+          Decimal.to_float(trxn.amount) + acc
+        end)
+        Logger.warning "#{total}"
+        {:ok, %{"tokens" => tokens, "total" => total}}
+    end
+  end
+
 end

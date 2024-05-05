@@ -1,24 +1,27 @@
 defmodule BankingApp.Operation do
+
   @operation_url "#{System.get_env("API_BASE_URL")}/operations"
+  @account_url "#{System.get_env("API_BASE_URL")}/accounts"
+
+  require Logger
 
   def open_an_account(client_secret) do
-    request_url = System.get_env("API_BASE_URL") <> "/accounts"
-
     payload =
       %{
         "client_secret" => String.trim(client_secret)
       }
       |> Jason.encode_to_iodata!()
 
-    process_request(:post, request_url, headers(), payload)
+    process_request(:post, @account_url, headers(), payload)
+    |> IO.inspect()
     |> process_response()
   end
 
-  def get_account_details(account) do
+  def get_account_details(account, account_number) do
     payload =
       %{
         "type" => "GetAccount",
-        "account" => account.account
+        "account" => account_number
       }
       |> Jason.encode_to_iodata!()
 
@@ -29,11 +32,25 @@ defmodule BankingApp.Operation do
     |> process_response()
   end
 
-  def get_routing_details(account) do
+  def get_list_transaction(account) do
+    payload =
+      %{
+        "type" => "ListTransactions"
+      }
+      |> Jason.encode_to_iodata!()
+
+    headers = auth_headers(account.token)
+
+    process_request(:post, @operation_url, headers, payload)
+    |> IO.inspect()
+    |> process_response()
+  end
+
+  def get_routing_details(account, state) do
     payload =
       %{
         "type" => "GetRouting",
-        "state" => account.state
+        "state" => state
       }
       |> Jason.encode_to_iodata!()
 
@@ -44,15 +61,13 @@ defmodule BankingApp.Operation do
     |> process_response()
   end
 
-  def authorize_transfer(account, routing_number) do
-    secret = "#{generate_character()}" |> String.downcase()
-    random_account = generate_account_number()
+  def authorize_transfer(account, from_account, secret) do
 
     payload =
       %{
         "type" => "Authorize",
-        "account" => random_account,
-        "routing" => routing_number,
+        "account" => from_account.account,
+        "routing" => from_account.routing_number,
         "secret" => secret
       }
       |> Jason.encode_to_iodata!()
@@ -62,6 +77,31 @@ defmodule BankingApp.Operation do
     process_request(:post, @operation_url, headers, payload)
     |> IO.inspect()
     |> process_response()
+  end
+
+  def transfer_funds(account, params) do
+
+
+    %{
+      "tokens" => tokens,
+      "total" => total
+    } = params
+    Logger.warning "#{inspect(params, pretty: true)}"
+    payload =
+      %{
+        "type" => "Transfer",
+        "authorizations" => tokens,
+        "total" => total
+      }
+      |> Jason.encode_to_iodata!()
+
+
+    headers = auth_headers(account.token)
+
+    process_request(:post, @operation_url, headers, payload)
+    |> IO.inspect()
+    |> process_response()
+
   end
 
   def headers() do
@@ -94,27 +134,17 @@ defmodule BankingApp.Operation do
     case response do
       %Finch.Response{status: 200} ->
         {:ok, Jason.decode!(body)}
-
       _ ->
         {:error, Jason.decode!(body)}
     end
   end
 
-  def process_response(response) do
-    response
+  def process_response({:error, %Mint.TransportError{reason: :timeout}}) do
+    {:error, %{"error" => "Something went wrong. timeout"}}
   end
 
-  @number_chars ~c"1234567890"
-  def generate_number(length \\ 10) do
-    for _ <- 1..length, into: ~c"", do: Enum.random(@number_chars)
+  def process_response(_) do
+    {:error, %{"error" => "Something went wrong."}}
   end
 
-  @letter_chars ~c"ABCDEFGHJKLMNPQRSTUVWXYZ"
-  def generate_character(length \\ 5) do
-    for _ <- 1..length, into: ~c"", do: Enum.random(@letter_chars)
-  end
-
-  def generate_account_number() do
-    "171471#{generate_number()}-#{generate_number(4)}"
-  end
 end

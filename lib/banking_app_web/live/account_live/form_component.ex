@@ -68,14 +68,15 @@ defmodule BankingAppWeb.AccountLive.FormComponent do
   end
 
   defp save_account(socket, :new, account_params) do
+    #  will add if self routing is needed {:ok, my_account} <- Accounts.get_routing(updated_account),
     with {:ok, account} <- Accounts.create_account(account_params),
          {:ok, updated_account} <- Accounts.fetch_account(account) do
-      notify_parent({:saved, updated_account})
+            notify_parent({:saved, updated_account})
 
-      {:noreply,
-       socket
-       |> put_flash(:info, "Account created successfully")
-       |> push_patch(to: socket.assigns.patch)}
+            {:noreply,
+            socket
+            |> put_flash(:info, "Account created successfully")
+            |> push_patch(to: socket.assigns.patch)}
     else
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}

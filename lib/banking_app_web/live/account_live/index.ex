@@ -28,7 +28,7 @@ defmodule BankingAppWeb.AccountLive.Index do
 
   defp apply_action(socket, :transfer, %{"id" => id}) do
     socket
-    |> assign(:page_title, "Transfer")
+    |> assign(:page_title, "Transfer authorize transactions")
     |> assign(:account, Accounts.get_account!(id))
   end
 

@@ -10,17 +10,17 @@ defmodule BankingAppWeb.AccountLive.TransferComponent do
     <div>
       <.header>
         <%= @title %>
-        <:subtitle>Use this form to manage account records in your database.</:subtitle>
+        <:subtitle>Transfer all authorize transactions</:subtitle>
       </.header>
 
       <.simple_form
         for={@form}
         id="transfer-form"
         phx-target={@myself}
-        phx-change="t-validate"
+
         phx-submit="transfer"
       >
-        <.input field={@form[:account]} type="text" label="Account" />
+        <.input disabled field={@form[:account]} type="text" label="Account" />
         <:actions>
           <.button phx-disable-with="Transferring...">Transfer</.button>
         </:actions>
@@ -40,7 +40,7 @@ defmodule BankingAppWeb.AccountLive.TransferComponent do
   end
 
   @impl true
-  def handle_event("t-validate", %{"account" => account_params}, socket) do
+  def handle_event("validate", %{"account" => account_params}, socket) do
     changeset =
       socket.assigns.account
       |> Accounts.change_account(account_params)
@@ -49,8 +49,8 @@ defmodule BankingAppWeb.AccountLive.TransferComponent do
     {:noreply, assign_form(socket, changeset)}
   end
 
-  def handle_event("transfer", %{"account" => account_params}, socket) do
-    transfer_funds(socket, socket.assigns.action, account_params)
+  def handle_event("transfer", %{}, socket) do
+    transfer_funds(socket, socket.assigns.action, %{})
   end
 
   defp transfer_funds(socket, :transfer, _account_params) do
@@ -60,7 +60,7 @@ defmodule BankingAppWeb.AccountLive.TransferComponent do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Account updated successfully")
+         |> put_flash(:info, "Funds successfully transfered.")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, _} ->

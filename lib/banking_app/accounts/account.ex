@@ -2,6 +2,8 @@ defmodule BankingApp.Accounts.Account do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias BankingApp.Accounts.Transaction
+
   schema "accounts" do
     field :token, :string
     field :client_secret, :string
@@ -10,11 +12,16 @@ defmodule BankingApp.Accounts.Account do
     field :city, :string
     field :country, :string
     field :company, :string
+    field :routing_number, :string
+
+    has_many :transaction,
+      Transaction,
+      foreign_key: :account_id, references: :id
 
     timestamps(type: :utc_datetime)
   end
 
-  @account_fields ~w(account token client_secret state city country company)a
+  @account_fields ~w(account token client_secret state city country company routing_number)a
 
   @doc false
   def changeset(account, attrs) do
