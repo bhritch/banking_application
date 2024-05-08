@@ -17,7 +17,7 @@ defmodule BankingAppWeb.Router do
   scope "/", BankingAppWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", AccountLive.Index, :index
 
     live "/accounts", AccountLive.Index, :index
     live "/accounts/new", AccountLive.Index, :new
