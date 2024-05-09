@@ -6,9 +6,10 @@ defmodule BankingAppWeb.AccountLive.TransferComponent do
 
   @impl true
   def render(assigns) do
-    total = Enum.reduce(assigns.account.auth_transactions, 0, fn trxn, acc ->
+
+    assigns = assign(assigns, :total, Enum.reduce(assigns.account.auth_transactions, 0, fn trxn, acc ->
       Decimal.to_float(trxn.amount) + acc
-    end)
+    end))
 
     ~H"""
     <div>
@@ -18,7 +19,7 @@ defmodule BankingAppWeb.AccountLive.TransferComponent do
       </.header>
       <p class="mt-10">
         Amount:<br/>
-        <span class="font-bold"><%= total %></span>
+        <span class="font-bold"><%= @total %></span>
       </p>
       <.simple_form
         for={@form}
