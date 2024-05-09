@@ -68,8 +68,6 @@ defmodule BankingAppWeb.AccountLive.AuthorizeComponent do
 
     trxn = socket.assigns.transaction
 
-    Logger.warning "trxn #{inspect(trxn)}"
-
     if is_nil(trxn.routing_number) do
 
       with {:ok, trxn_account} <- Accounts.fetch_trxn_account(trxn.accounts, trxn.account),
@@ -77,7 +75,17 @@ defmodule BankingAppWeb.AccountLive.AuthorizeComponent do
         assign(socket, :transaction, updated_trxn)
         apply_authorization(socket, trxn.accounts, updated_trxn, params)
       else
-        {:error, error} ->  {:error, error}
+
+        {:error, %{"error" => message}} ->
+            {:noreply,
+              socket
+              |> put_flash(:error, message)
+              |> push_patch(to: socket.assigns.patch)}
+        {:error, message} ->
+            {:noreply,
+              socket
+              |> put_flash(:error, message)
+              |> push_patch(to: socket.assigns.patch)}
       end
     else
 

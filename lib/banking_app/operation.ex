@@ -1,7 +1,7 @@
 defmodule BankingApp.Operation do
 
-  @operation_url "#{System.get_env("API_BASE_URL")}/operations"
-  @account_url "#{System.get_env("API_BASE_URL")}/accounts"
+  @operation_url "https://exam.razoyo.com/api/banking/operations"
+  @account_url "https://exam.razoyo.com/api/banking/accounts"
 
   require Logger
 
@@ -140,11 +140,11 @@ defmodule BankingApp.Operation do
   end
 
   def process_response({:error, %Mint.TransportError{reason: :timeout}}) do
-    {:error, %{"error" => "Something went wrong. timeout"}}
+    {:error, "Request timeout. Please try again."}
   end
 
   def process_response(_) do
-    {:error, %{"error" => "Something went wrong."}}
+    {:error, "Something went wrong. Please try again."}
   end
 
 end

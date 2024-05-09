@@ -213,8 +213,15 @@ defmodule BankingApp.Accounts do
          {:ok, _} <- Operation.transfer_funds(account, params) do
       {:ok, account}
     else
-      {:error, %{"error" => message}} -> {:error, message}
-      _ -> {:error, "Something went wrong."}
+      {:error, message} ->
+        Logger.warning "1 #{inspect(message)}"
+        {:error, message}
+      {:error, %{"error" => message}} ->
+        Logger.warning "2 #{inspect(message)}"
+        {:error, message}
+      err ->
+        Logger.warning "#{inspect(err)}"
+        {:error, "3 Something went wrong."}
     end
   end
 
@@ -309,11 +316,9 @@ defmodule BankingApp.Accounts do
         tokens = Enum.map(transactions, fn trxn ->
           trxn.token
         end)
-        Logger.warning "#{inspect(tokens, pretty: true)}"
         total = Enum.reduce(transactions, 0, fn trxn, acc ->
           Decimal.to_float(trxn.amount) + acc
         end)
-        Logger.warning "#{total}"
         {:ok, %{"tokens" => tokens, "total" => total}}
     end
   end

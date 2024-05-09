@@ -9,7 +9,7 @@ defmodule BankingAppWeb.AccountLive.FormComponent do
     <div>
       <.header>
         <%= @title %>
-        <:subtitle>Use this form to manage account records in your database.</:subtitle>
+        <:subtitle></:subtitle>
       </.header>
 
       <.simple_form
@@ -19,7 +19,7 @@ defmodule BankingAppWeb.AccountLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-        <.input field={@form[:client_secret]} type="text" label="Client secret" />
+        <.input field={@form[:client_secret]} type="text" label="Client Secret" />
         <:actions>
           <.button phx-disable-with="Saving...">Save Account</.button>
         </:actions>
@@ -82,14 +82,16 @@ defmodule BankingAppWeb.AccountLive.FormComponent do
         {:noreply, assign_form(socket, changeset)}
 
       {:error, message} ->
-        socket
-        |> put_flash(:danger, message)
-        |> push_patch(to: socket.assigns.patch)
+        {:noreply,
+          socket
+          |> put_flash(:error, message)
+          |> push_patch(to: socket.assigns.patch)}
 
       _ ->
-        socket
-        |> put_flash(:danger, "Something went wrong.")
-        |> push_patch(to: socket.assigns.patch)
+        {:noreply,
+          socket
+          |> put_flash(:error, "Something went wrong.")
+          |> push_patch(to: socket.assigns.patch)}
     end
   end
 

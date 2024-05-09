@@ -22,7 +22,7 @@ defmodule BankingAppWeb.AccountLive.Show do
 
   defp apply_action(socket, :authorize, %{"id" => id, "trxn_id" => trxn_id}) do
     socket
-    |> assign(:page_title, "Authorize account")
+    |> assign(:page_title, "Authorize funds to be transferred out of this account")
     |> assign(:account, Accounts.get_account!(id))
     |> assign(:transactions, Accounts.get_transactions(id))
     |> assign(:transaction, Accounts.get_transactions_by_id(trxn_id))

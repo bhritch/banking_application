@@ -63,11 +63,17 @@ defmodule BankingAppWeb.AccountLive.TransferComponent do
          |> put_flash(:info, "Funds successfully transfered.")
          |> push_patch(to: socket.assigns.patch)}
 
-      {:error, _} ->
+      {:error, %{"error" => message}} ->
+          {:noreply,
+            socket
+            |> put_flash(:error, message)
+            |> push_patch(to: socket.assigns.patch)}
+      {:error, message} ->
         {:noreply,
          socket
-         |> put_flash(:danger, "Something went wrong.")
+         |> put_flash(:error, message)
          |> push_patch(to: socket.assigns.patch)}
+
     end
   end
 

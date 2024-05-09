@@ -22,7 +22,7 @@ defmodule BankingAppWeb.AccountLive.Index do
 
   defp apply_action(socket, :new, _params) do
     socket
-    |> assign(:page_title, "New Account")
+    |> assign(:page_title, "Open new account")
     |> assign(:account, %Account{})
   end
 
