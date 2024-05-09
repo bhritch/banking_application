@@ -6,18 +6,24 @@ defmodule BankingAppWeb.AccountLive.TransferComponent do
 
   @impl true
   def render(assigns) do
+    total = Enum.reduce(assigns.account.auth_transactions, 0, fn trxn, acc ->
+      Decimal.to_float(trxn.amount) + acc
+    end)
+
     ~H"""
     <div>
       <.header>
         <%= @title %>
-        <:subtitle>Transfer all authorize transactions</:subtitle>
+        <:subtitle>Transfer all authorize transactions into your account</:subtitle>
       </.header>
-
+      <p class="mt-10">
+        Amount:<br/>
+        <span class="font-bold"><%= total %></span>
+      </p>
       <.simple_form
         for={@form}
         id="transfer-form"
         phx-target={@myself}
-
         phx-submit="transfer"
       >
         <.input disabled field={@form[:account]} type="text" label="Account" />

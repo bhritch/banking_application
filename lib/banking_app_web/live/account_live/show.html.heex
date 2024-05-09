@@ -9,19 +9,23 @@
     </:actions>
   </.header>
 
-  <.list>
-    <:item title="Account"><%= @account.account %></:item>
-    <:item title="State"><%= @account.state %></:item>
-    <:item title="City"><%= @account.city %></:item>
-    <:item title="Country"><%= @account.country %></:item>
-    <:item title="Company"><%= @account.company %></:item>
-  </.list>
+  <.table
+  id="transactions"
+  rows={[@account]}
+  >
+    <:col label="Account"><%= @account.account %></:col>
+    <:col label="State"><%= @account.state %></:col>
+    <:col label="City"><%= @account.city %></:col>
+    <:col label="Country"><%= @account.country %></:col>
+    <:col label="Company"><%= @account.company %></:col>
+    
+  </.table>
+
 </div>
 <div class="py-5 mt-5">
 <.header>
-  List of transactions
+  Recent transactions
   <:subtitle>List of recent transactions</:subtitle>
-
 </.header>
 
 <.table

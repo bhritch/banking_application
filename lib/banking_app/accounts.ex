@@ -48,6 +48,14 @@ defmodule BankingApp.Accounts do
   """
   def get_account!(id), do: Repo.get!(Account, id)
 
+  def get_account(id) do
+    Account
+      |> join(:left, [a], assoc(a, :auth_transactions))
+      |> where([a], a.id == ^id)
+      |> preload([:auth_transactions])
+      |> Repo.one
+  end
+
   @doc """
   Creates a account.
 

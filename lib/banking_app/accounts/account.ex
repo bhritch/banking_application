@@ -3,6 +3,7 @@ defmodule BankingApp.Accounts.Account do
   import Ecto.Changeset
 
   alias BankingApp.Accounts.Transaction
+  alias BankingApp.Transactions.Transaction, as: Trxn
 
   schema "accounts" do
     field :token, :string
@@ -16,6 +17,10 @@ defmodule BankingApp.Accounts.Account do
 
     has_many :transaction,
       Transaction,
+      foreign_key: :account_id, references: :id
+
+    has_many :auth_transactions,
+      Trxn,
       foreign_key: :account_id, references: :id
 
     timestamps(type: :utc_datetime)
